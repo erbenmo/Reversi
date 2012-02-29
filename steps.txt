@@ -18,8 +18,6 @@
 4) Min-Max!
 	Assume opponent also uses Min-Max
 	Choose the best option
-	
-
 
 
 
