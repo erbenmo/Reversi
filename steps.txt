@@ -1,0 +1,26 @@
+1) Find All possible place to put pieces
+	Branching factor may not be that high
+	
+	How to find those candidates?
+		???
+		
+		
+2) Simple Bot: Make a greedy one
+	How many if can flip in next run
+	2+) Static H Bot: 
+		With different weight
+	2++) Dynamic H Bot
+		Dynamic weight, how?
+		simple look ahead..
+3) Make a random one...
+
+
+4) Min-Max!
+	Assume opponent also uses Min-Max
+	Choose the best option
+	
+
+
+
+
+
