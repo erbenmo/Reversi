@@ -1,0 +1,5 @@
+D:\Erben Mo\Reversi\Reversi\obj\x86\Debug\ResolveAssemblyReference.cache
+D:\Erben Mo\Reversi\Reversi\bin\Debug\Reversi.exe
+D:\Erben Mo\Reversi\Reversi\bin\Debug\Reversi.pdb
+D:\Erben Mo\Reversi\Reversi\obj\x86\Debug\Reversi.exe
+D:\Erben Mo\Reversi\Reversi\obj\x86\Debug\Reversi.pdb
