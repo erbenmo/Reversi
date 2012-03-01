@@ -4,7 +4,8 @@
 	How to find those candidates?
 		???
 		
-		
+3) Make a random one...
+
 2) Simple Bot: Make a greedy one
 	How many if can flip in next run
 	2+) Static H Bot: 
@@ -12,12 +13,24 @@
 	2++) Dynamic H Bot
 		Dynamic weight, how?
 		simple look ahead..
-3) Make a random one...
+
 
 
 4) Min-Max!
 	Assume opponent also uses Min-Max
-	Choose the best option
+	utility = strength-a / strength-b
+		a max utility, b min utility
+	board[][] info?
+	
+	
+
+~) loop until get right human input	
+~) game over
+~) test greedy & static
+
+
+5) min-max & alpha-beta!
+4) figure out dynamic
 
 
 
