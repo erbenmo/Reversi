@@ -16,7 +16,7 @@
 
 
 
-4) Min-Max!
+4) Mini-Max!
 	Assume opponent also uses Min-Max
 	utility = strength-a / strength-b
 		a max utility, b min utility
@@ -30,6 +30,11 @@
 
 
 5) min-max & alpha-beta!
+	merge 6 move_* functions
+	bug in the end!?
+	too dummy!
+	
+
 4) figure out dynamic
 
 

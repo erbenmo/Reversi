@@ -43,11 +43,11 @@ namespace Reversi
 							getInput(ref h, ref w);
 						} while (!legalHumanInput(h, w, legal_cand));
 						
+
+						//int index = ai.Random_AI(turn, legal_cand);
+						//int index = ai.Mini_Max_AI(turn, legal_cand);
+						//h = index / Board.SIZE; w = index % Board.SIZE;
 						
-						/*
-						int index = ai.Static_H_Bot_AI(turn, legal_cand);
-						h = index / Board.SIZE; w = index % Board.SIZE;
-						*/
 
 						b.place_piece(h, w, turn, Board.MARK.Mark);
 					}
@@ -66,8 +66,9 @@ namespace Reversi
 
 						// int index = ai.Random_AI(turn, legal_cand);
 						//int index = ai.Simple_Bot_AI(turn, legal_cand);
+						//int index = ai.Simple_Bot_AI(turn, legal_cand);
 						int index = ai.Static_H_Bot_AI(turn, legal_cand);
-	
+
 						int h = index / Board.SIZE, w = index % Board.SIZE;
 
 						System.Console.WriteLine("-");
