@@ -7,49 +7,58 @@ namespace Reversi
 {
 	class Reversi
 	{
-		public Board b = new Board();
+		public Board b;
+		public List<List<Board.PIECE>> cur_board;
+		public List<int> cur_empty_neighbor_list;
 		public AI ai;
+
+		public Reversi()
+		{
+			cur_board = new List<List<Board.PIECE>>();
+			cur_empty_neighbor_list = new List<int>();
+			b = new Board(cur_board, cur_empty_neighbor_list);
+			ai = new AI(b, cur_board, cur_empty_neighbor_list);
+		}
 
 		public static void Main()
 		{
 			Reversi game = new Reversi();
-
 			game.play();
 		}
 
 		public void play()
 		{
-			ai = new AI(b);
-
 			int safe = 0;
 			Board.PIECE turn = Board.PIECE.BLACK;
 
 			bool stuck_human = false, stuck_ai = false;
 			while ((safe+=1) < 100)
 			{
-				b.print();
+				b.print(cur_board);
 				
 				if (turn == Board.PIECE.BLACK)
 				{
-					List<int> legal_cand = b.find_legal_candidates(turn);
+					List<int> legal_cand = b.find_legal_candidates(cur_board, cur_empty_neighbor_list, turn);
 					if (legal_cand.Count != 0)
 					{
 						int h = -1, w = -1;
 						stuck_human = false;
 
-						
+						// int index = ai.Random_AI(turn, legal_cand);
+						// int index = ai.Simple_Bot_AI(turn, legal_cand);
+						int index = ai.Static_H_Bot_AI(turn, legal_cand);
+						// int index = ai.Mini_Max_AI(turn, legal_cand);
+						h = index / Board.SIZE; w = index % Board.SIZE;
+						printChoice(h, w, turn);
+
+						/*
 						do
 						{
 							getInput(ref h, ref w);
 						} while (!legalHumanInput(h, w, legal_cand));
-						
+						*/
 
-						//int index = ai.Random_AI(turn, legal_cand);
-						//int index = ai.Mini_Max_AI(turn, legal_cand);
-						//h = index / Board.SIZE; w = index % Board.SIZE;
-						
-
-						b.place_piece(h, w, turn, Board.MARK.Mark);
+						b.place_piece(cur_board, cur_empty_neighbor_list, h, w, turn, Board.MARK.Mark);
 					}
 					else
 					{
@@ -59,24 +68,20 @@ namespace Reversi
 				}
 				else if (turn == Board.PIECE.WHITE)
 				{
-					List<int> legal_cand = b.find_legal_candidates(turn);
+					List<int> legal_cand = b.find_legal_candidates(cur_board, cur_empty_neighbor_list, turn);
 					if (legal_cand.Count != 0)
 					{
 						stuck_ai = false;
 
 						// int index = ai.Random_AI(turn, legal_cand);
-						//int index = ai.Simple_Bot_AI(turn, legal_cand);
-						//int index = ai.Simple_Bot_AI(turn, legal_cand);
-						int index = ai.Static_H_Bot_AI(turn, legal_cand);
-
+						// int index = ai.Simple_Bot_AI(turn, legal_cand);
+						// int index = ai.Static_H_Bot_AI(turn, legal_cand);
+						int index = ai.Mini_Max_AI(turn, legal_cand);
+				
 						int h = index / Board.SIZE, w = index % Board.SIZE;
+						printChoice(h, w, turn);
 
-						System.Console.WriteLine("-");
-						Console.WriteLine(h + " " + w);
-						Console.WriteLine();
-						Console.WriteLine();
-
-						b.place_piece(h, w, turn, Board.MARK.Mark);
+						b.place_piece(cur_board, cur_empty_neighbor_list, h, w, turn, Board.MARK.Mark);
 					}
 					else
 					{
@@ -92,6 +97,17 @@ namespace Reversi
 					break;
 				}
 			}
+		}
+
+		void printChoice(int h, int w, Board.PIECE caller)
+		{
+			if (caller == Board.PIECE.BLACK)
+				Console.WriteLine("@");
+			else
+				Console.WriteLine("-");
+			Console.WriteLine(h + " " + w);
+			Console.WriteLine();
+			Console.WriteLine();
 		}
 
 		bool legalHumanInput(int h, int w, List<int> legal_cand)
@@ -117,9 +133,9 @@ namespace Reversi
 			{
 				for (int w = 0; w < Board.SIZE; w++)
 				{
-					if (b.board[h][w] == Board.PIECE.EMPTY) continue;
-					else if (b.board[h][w] == Board.PIECE.BLACK) count_human++;
-					else if (b.board[h][w] == Board.PIECE.WHITE) count_ai++;
+					if (cur_board[h][w] == Board.PIECE.EMPTY) continue;
+					else if (cur_board[h][w] == Board.PIECE.BLACK) count_human++;
+					else if (cur_board[h][w] == Board.PIECE.WHITE) count_ai++;
 				}
 			}
 

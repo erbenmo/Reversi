@@ -30,11 +30,6 @@ namespace Reversi
 
 		public const int SIZE = 8;
 
-		public List<List<PIECE>> board;
-		
-		public List<int> empty_neighbors_list; // location idx of all qualified pieces
-
-		/* data from http://www.site-constructor.com/othello/Present/BoardLocationValue.html */
 		int [][] initial_weight = {new int []{50, -1, 5, 2, 2, 5, -1, 50},
 								   new int [] {-1, -10, 1, 1, 1, 1, -10, -1},
 								   new int [] {5, 1, 1, 1, 1, 1, 1, 5},
@@ -44,12 +39,9 @@ namespace Reversi
 								   new int [] {-1, -10, 1, 1, 1, 1, -10, -1},
 								   new int [] {50, -1, 5, 2, 2, 5, -1, 50}};
 
-		public Board()
+		public Board(List<List<Board.PIECE>> initial_board, List<int> initial_empty_neighbor_list)
 		{
 			Debug.Assert(SIZE % 2 == 0);
-
-			board = new List<List<PIECE>>();
-			empty_neighbors_list = new List<int>();
 
 			for (int h = 0; h < SIZE; h++)
 			{	
@@ -59,18 +51,17 @@ namespace Reversi
 				{
 					row_pieces.Add(PIECE.EMPTY);
 				}
-				board.Add(row_pieces);
+				initial_board.Add(row_pieces);
 			}
 
 			int mid_1 = SIZE / 2 - 1, mid_2 = SIZE / 2;
-			place_piece(mid_1, mid_2, PIECE.BLACK, MARK.Mark);
-			place_piece(mid_2, mid_1, PIECE.BLACK, MARK.Mark);
-			place_piece(mid_1, mid_1, PIECE.WHITE, MARK.Mark);
-			place_piece(mid_2, mid_2, PIECE.WHITE, MARK.Mark);
-
+			place_piece(initial_board, initial_empty_neighbor_list, mid_1, mid_2, PIECE.BLACK, MARK.Mark);
+			place_piece(initial_board, initial_empty_neighbor_list, mid_2, mid_1, PIECE.BLACK, MARK.Mark);
+			place_piece(initial_board, initial_empty_neighbor_list, mid_1, mid_1, PIECE.WHITE, MARK.Mark);
+			place_piece(initial_board, initial_empty_neighbor_list, mid_2, mid_2, PIECE.WHITE, MARK.Mark);
 		}
 
-		public void print()
+		public void print(List<List<Board.PIECE>> board)
 		{
 			Console.Write("R ");
 			for (int i = 0; i < Board.SIZE; i++)
@@ -99,7 +90,7 @@ namespace Reversi
 			System.Console.WriteLine();
 		}
 
-		public double getStrengthRatio()
+		public double getStrengthRatio(List<List<Board.PIECE>> board)
 		{
 			int strength_black = 0, strength_white = 0;
 			for (int h = 0; h < SIZE; h++)
@@ -116,23 +107,24 @@ namespace Reversi
 			return 1.0 * strength_black / strength_white;
 		}
 
-		public List<int> find_legal_candidates(PIECE caller)
+		public List<int> find_legal_candidates(List<List<Board.PIECE>> board, List<int> empty_neighbor_list, PIECE caller)
 		{
 			List<int> legal_cand = new List<int>();
 
-			for (int i = 0; i < empty_neighbors_list.Count; i++)
+			for (int i = 0; i < empty_neighbor_list.Count; i++)
 			{
-				int h = empty_neighbors_list[i] / SIZE, w = empty_neighbors_list[i] % SIZE;
+				int h = empty_neighbor_list[i] / SIZE, w = empty_neighbor_list[i] % SIZE;
 
-				if(isLegal(h, w, caller))
-					legal_cand.Add(empty_neighbors_list[i]);
+				if(isLegal(board, h, w, caller))
+					legal_cand.Add(empty_neighbor_list[i]);
 			}
 
 			return legal_cand;
 		}
 
 		
-		public int place_piece(int h, int w, PIECE caller, MARK need_mark, WEIGHT weight = WEIGHT.Default)
+		public int place_piece(List<List<Board.PIECE>> board, List<int> empty_neighbor_list, 
+			int h, int w, PIECE caller, MARK need_mark, WEIGHT weight = WEIGHT.Default)
 		{
 			if (!on_board(h, w) || board[h][w] != PIECE.EMPTY) return 0;
 			
@@ -145,20 +137,20 @@ namespace Reversi
 				{
 					if(dh == 0 && dw == 0) continue;
 
-					gain_sum += move(h, w, dh, dw, caller, need_mark, weight);
+					gain_sum += move(board, h, w, dh, dw, caller, need_mark, weight);
 				}
 			}
 			
 			if (need_mark == MARK.Mark)
-				maintain_empty_neighbors_list(h, w);
+				maintain_empty_neighbors_list(board, empty_neighbor_list, h, w);
 			
 			return gain_sum;
 		}
 
-		public void maintain_empty_neighbors_list(int h, int w)
+		public void maintain_empty_neighbors_list(List<List<Board.PIECE>> board, List<int> empty_neighbor_list, int h, int w)
 		{
 			int idx = h * SIZE + w;
-			empty_neighbors_list.Remove(idx);
+			empty_neighbor_list.Remove(idx);
 			for (int dh = -1; dh <= 1; dh++)
 			{
 				for (int dw = -1; dw <= 1; dw++)
@@ -166,16 +158,16 @@ namespace Reversi
 					int new_idx = (h + dh) * SIZE + w + dw;
 					if (dh == 0 && dw == 0) continue;
 					
-					if (empty_neighbors_list.IndexOf(new_idx) == -1 && 
+					if (empty_neighbor_list.IndexOf(new_idx) == -1 && 
 						on_board(h+dh, w+dw) &&
 						board[h+dh][w+dw] == PIECE.EMPTY)
-						empty_neighbors_list.Add(new_idx);
+						empty_neighbor_list.Add(new_idx);
 				}
 			}
 		}
 
 
-		public bool isLegal(int h, int w, PIECE caller)
+		public bool isLegal(List<List<Board.PIECE>> board, int h, int w, PIECE caller)
 		{
 			if (on_board(h, w) == false) return false;
 
@@ -184,7 +176,7 @@ namespace Reversi
 				for (int dw = -1; dw <= 1; dw++)
 				{
 					if (dh == 0 && dw == 0) continue;
-					if (move(h, w, dh, dw, caller, MARK.Don_t_mark) != 0) return true;
+					if (move(board, h, w, dh, dw, caller, MARK.Don_t_mark) != 0) return true;
 				}
 			}
 
@@ -197,7 +189,8 @@ namespace Reversi
 		}
 
 
-		public int move(int h, int w, int dh, int dw, PIECE caller, MARK need_mark, WEIGHT weight = WEIGHT.Default)
+		public int move(List<List<Board.PIECE>> board, int h, int w, int dh, int dw, 
+			PIECE caller, MARK need_mark, WEIGHT weight = WEIGHT.Default)
 		{
 			PIECE enemy = (caller == PIECE.BLACK) ? PIECE.WHITE : PIECE.BLACK;
 			w = w + dw; h = h + dh;
@@ -226,173 +219,3 @@ namespace Reversi
 		}
 	}
 }
-
-
-/*
-			gain_sum += move_up(h, w, caller, need_mark, weight);
-			gain_sum += move_down(h, w, caller, need_mark, weight);
-			gain_sum += move_left(h, w, caller, need_mark, weight);
-			gain_sum += move_right(h, w, caller, need_mark, weight);
-			gain_sum += move_upper_left(h, w, caller, need_mark, weight);
-			gain_sum += move_lower_right(h, w, caller, need_mark, weight);
-			gain_sum += move_lower_left(h, w, caller, need_mark, weight);
-			gain_sum += move_upper_right(h, w, caller, need_mark, weight);
-*/
-
-/*
-			if (move_up(h, w, caller, MARK.Don_t_mark) != 0) return true;
-			if (move_down(h, w, caller, MARK.Don_t_mark) != 0) return true;
-			if (move_left(h, w, caller, MARK.Don_t_mark) != 0) return true;
-			if (move_right(h, w, caller, MARK.Don_t_mark) != 0) return true;
-			if (move_upper_left(h, w, caller, MARK.Don_t_mark) != 0) return true;
-			if (move_lower_right(h, w, caller, MARK.Don_t_mark) != 0) return true;
-			if (move_upper_right(h, w, caller, MARK.Don_t_mark) != 0) return true;
-			if (move_lower_left(h, w, caller, MARK.Don_t_mark) != 0) return true;
-			return false;
- */
-
-/*
-public int move_up(int h, int w, PIECE caller, MARK need_mark, WEIGHT weight = WEIGHT.Default)
-{
-	PIECE enemy = (caller == PIECE.BLACK) ? PIECE.WHITE : PIECE.BLACK;
-	h = h - 1;
-	while (on_board(h, w) && board[h][w] == enemy) h = h - 1;
-	if (!on_board(h, w) || board[h][w] == PIECE.EMPTY) return 0;
-
-	h = h + 1;
-	int gain = 0;
-	while (board[h][w] == enemy)
-	{
-		if (need_mark == MARK.Mark) board[h][w] = caller;
-		h = h + 1;
-		gain += getGain(h, w, weight);
-	}
-	return gain;
-}
-
-public int move_down(int h, int w, PIECE caller, MARK need_mark, WEIGHT weight = WEIGHT.Default)
-{
-	PIECE enemy = (caller == PIECE.BLACK) ? PIECE.WHITE : PIECE.BLACK;
-	h = h + 1;
-	while (on_board(h, w) && board[h][w] == enemy) h = h + 1;
-	if (!on_board(h, w) || board[h][w] == PIECE.EMPTY) return 0;
-
-	h = h - 1;
-	int gain = 0;
-	while (board[h][w] == enemy)
-	{
-		if (need_mark == MARK.Mark) board[h][w] = caller;
-		h = h - 1;
-		gain += getGain(h, w, weight);
-	}
-	return gain;
-}
-
-public int move_left(int h, int w, PIECE caller, MARK need_mark, WEIGHT weight = WEIGHT.Default)
-{
-	PIECE enemy = (caller == PIECE.BLACK) ? PIECE.WHITE : PIECE.BLACK;
-	w = w - 1;
-	while (on_board(h, w) && board[h][w] == enemy) w = w - 1;
-	if (!on_board(h, w) || board[h][w] == PIECE.EMPTY) return 0;
-
-	w = w + 1;
-	int gain = 0;
-	while (board[h][w] == enemy)
-	{
-		if (need_mark == MARK.Mark) board[h][w] = caller;
-		w = w + 1;
-		gain += getGain(h, w, weight);
-	}
-	return gain;
-}
-
-public int move_right(int h, int w, PIECE caller, MARK need_mark, WEIGHT weight = WEIGHT.Default)
-{
-	PIECE enemy = (caller == PIECE.BLACK) ? PIECE.WHITE : PIECE.BLACK;
-	w = w + 1;
-	while (on_board(h, w) && board[h][w] == enemy) w = w + 1;
-	if (!on_board(h, w) || board[h][w] == PIECE.EMPTY) return 0;
-
-	w = w - 1;
-	int gain = 0;
-	while (board[h][w] == enemy)
-	{
-		if (need_mark == MARK.Mark) board[h][w] = caller;
-		w = w - 1;
-		gain += getGain(h, w, weight);
-	}
-	return gain;
-}
-
-public int move_upper_left(int h, int w, PIECE caller, MARK need_mark, WEIGHT weight = WEIGHT.Default)
-{
-	PIECE enemy = (caller == PIECE.BLACK) ? PIECE.WHITE : PIECE.BLACK;
-	w = w - 1; h = h - 1;
-	while (on_board(h, w) && board[h][w] == enemy) { w = w - 1; h = h - 1; }
-	if (!on_board(h, w) || board[h][w] == PIECE.EMPTY) return 0;
-
-	w = w + 1; h = h + 1;
-	int gain = 0;
-	while (board[h][w] == enemy)
-	{
-		if (need_mark == MARK.Mark) board[h][w] = caller;
-		w = w + 1; h = h + 1;
-		gain += getGain(h, w, weight);
-	}
-	return gain;
-}
-
-public int move_lower_right(int h, int w, PIECE caller, MARK need_mark, WEIGHT weight = WEIGHT.Default)
-{
-	PIECE enemy = (caller == PIECE.BLACK) ? PIECE.WHITE : PIECE.BLACK;
-	w = w + 1; h = h + 1;
-	while (on_board(h, w) && board[h][w] == enemy) { w = w + 1; h = h + 1; }
-	if (!on_board(h, w) || board[h][w] == PIECE.EMPTY) return 0;
-
-	w = w - 1; h = h - 1;
-	int gain = 0;
-	while (board[h][w] == enemy)
-	{
-		if (need_mark == MARK.Mark) board[h][w] = caller;
-		w = w - 1; h = h - 1;
-		gain += getGain(h, w, weight);
-	}
-	return gain;
-}
-
-public int move_lower_left(int h, int w, PIECE caller, MARK need_mark, WEIGHT weight = WEIGHT.Default)
-{
-	PIECE enemy = (caller == PIECE.BLACK) ? PIECE.WHITE : PIECE.BLACK;
-	w = w - 1; h = h + 1;
-	while (on_board(h, w) && board[h][w] == enemy) { w = w - 1; h = h + 1; }
-	if (!on_board(h, w) || board[h][w] == PIECE.EMPTY) return 0;
-
-	w = w + 1; h = h - 1;
-	int gain = 0;
-	while (board[h][w] == enemy)
-	{
-		if (need_mark == MARK.Mark) board[h][w] = caller;
-		w = w + 1; h = h - 1;
-		gain += getGain(h, w, weight);
-	}
-	return gain;
-}
-
-public int move_upper_right(int h, int w, PIECE caller, MARK need_mark, WEIGHT weight = WEIGHT.Default)
-{
-	PIECE enemy = (caller == PIECE.BLACK) ? PIECE.WHITE : PIECE.BLACK;
-	w = w + 1; h = h - 1;
-	while (on_board(h, w) && board[h][w] == enemy) { w = w + 1; h = h - 1; }
-	if (!on_board(h, w) || board[h][w] == PIECE.EMPTY) return 0;
-
-	w = w - 1; h = h + 1;
-	int gain = 0;
-	while (board[h][w] == enemy)
-	{
-		if (need_mark == MARK.Mark) board[h][w] = caller;
-		w = w - 1; h = h + 1;
-		gain += getGain(h, w, weight);
-	}
-	return gain;
-}
-*/
