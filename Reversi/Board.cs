@@ -92,7 +92,7 @@ namespace Reversi
 
 		public double getStrengthRatio(List<List<Board.PIECE>> board)
 		{
-			int strength_black = 0, strength_white = 0;
+			int strength_black = 1, strength_white = 1;
 			for (int h = 0; h < SIZE; h++)
 			{
 				for (int w = 0; w < SIZE; w++)

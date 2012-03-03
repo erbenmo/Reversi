@@ -13,9 +13,11 @@ namespace Reversi
 		public List<List<Board.PIECE>> cur_board;
 		public List<int> cur_empty_neighbor_list;
 
-		public int SearchDepth = 3;
+		public int SearchDepth = 4;
 
 		public int best_option = -1;
+
+		public double infinity = 100;
 
 		public AI(Board board, List<List<Board.PIECE>> _cur_board, List<int> _cur_empty_neighbor_list)
 		{
@@ -68,13 +70,13 @@ namespace Reversi
 
 			if (caller == Board.PIECE.BLACK)
 			{
-				max_value(copy(cur_board), new List<int>(cur_empty_neighbor_list), SearchDepth);
+				max_value(copy(cur_board), new List<int>(cur_empty_neighbor_list), -infinity, infinity, SearchDepth);
 
 				return legal_cand[best_option];
 			}
 			else if (caller == Board.PIECE.WHITE)
 			{
-				min_value(copy(cur_board), new List<int>(cur_empty_neighbor_list), SearchDepth);
+				min_value(copy(cur_board), new List<int>(cur_empty_neighbor_list), -infinity, infinity, SearchDepth);
 
 				return legal_cand[best_option];
 			}
@@ -83,16 +85,16 @@ namespace Reversi
 		}
 
 		
-		public double max_value(List<List<Board.PIECE>> state, List<int> empty_neighbor_list, int d)
+		public double max_value(List<List<Board.PIECE>> state, List<int> empty_neighbor_list, double alpha, double beta, int d)
 		{
 			if (d == 0) return b.getStrengthRatio(state);
 
 			List<int> legal_cand = b.find_legal_candidates(state, empty_neighbor_list, Board.PIECE.BLACK);
 
 			if (legal_cand.Count == 0)
-				return min_value(copy(state), new List<int>(empty_neighbor_list), d - 1);
+				return min_value(copy(state), new List<int>(empty_neighbor_list), alpha, beta, d - 1);
 				
-			double max_v = -100; int max_idx = -2;
+			double max_v = -infinity; int max_idx = -2;
 			for (int i = 0; i < legal_cand.Count; i++)
 			{
 				int h = legal_cand[i] / Board.SIZE, w = legal_cand[i] % Board.SIZE;
@@ -100,25 +102,27 @@ namespace Reversi
 				List<int> branch_empty_neighbor_state = new List<int>(empty_neighbor_list);
 
 				b.place_piece(branch_state, branch_empty_neighbor_state, h, w, Board.PIECE.BLACK, Board.MARK.Mark, Board.WEIGHT.Static);
-				double cur_v = min_value(branch_state, branch_empty_neighbor_state, d - 1);
-
-				if (cur_v <= -100 && max_idx < 0)
-				{
-					max_idx = i;	// accpet bad move.
-				}
+				double cur_v = min_value(branch_state, branch_empty_neighbor_state, alpha, beta, d - 1);
 
 				if (cur_v > max_v)
 				{
 					max_v = cur_v;
 					max_idx = i;
 				}
+				
+				if (max_v >= beta)
+				{
+					break;			// prune the rest
+				}
+
+				alpha = Math.Max(alpha, max_v);
 			}
 
 			best_option = max_idx;
 			return max_v;
 		}
 
-		public double min_value(List<List<Board.PIECE>> state, List<int> empty_neighbor_list, int d, bool debug = false)
+		public double min_value(List<List<Board.PIECE>> state, List<int> empty_neighbor_list, double alpha, double beta,  int d)
 		{
 		//	b.print(state);
 			if (d == 0) return b.getStrengthRatio(state);
@@ -126,9 +130,9 @@ namespace Reversi
 			List<int> legal_cand = b.find_legal_candidates(state, empty_neighbor_list, Board.PIECE.WHITE);
 
 			if (legal_cand.Count == 0)
-				return max_value(copy(state), new List<int>(empty_neighbor_list), d - 1);
+				return max_value(copy(state), new List<int>(empty_neighbor_list), alpha, beta, d - 1);
 
-			double min_v = 100; int min_idx = -3;
+			double min_v = infinity; int min_idx = -3;
 			for (int i = 0; i < legal_cand.Count; i++)
 			{
 				int h = legal_cand[i] / Board.SIZE, w = legal_cand[i] % Board.SIZE;
@@ -137,21 +141,20 @@ namespace Reversi
 				List<int> branch_empty_neighbor_state = new List<int>(empty_neighbor_list);
 
 				b.place_piece(branch_state, branch_empty_neighbor_state, h, w, Board.PIECE.WHITE, Board.MARK.Mark, Board.WEIGHT.Static);
-				double cur_v = max_value(branch_state, branch_empty_neighbor_state, d - 1);
-
-				if (debug)
-					Console.Write("d..");
-
-				if (cur_v >= 100 && min_idx < 0)
-				{
-					min_idx = i;
-				}
+				double cur_v = max_value(branch_state, branch_empty_neighbor_state, alpha, beta, d - 1);
 					
 				if (cur_v < min_v)
 				{
 					min_v = cur_v;
 					min_idx = i;
 				}
+				
+				if (min_v <= alpha)
+				{
+					break;
+				}
+
+				beta = Math.Min(beta, min_v);
 			}
 
 			best_option = min_idx;
